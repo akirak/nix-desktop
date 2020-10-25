@@ -1,6 +1,6 @@
 # nix-desktop
 
-This repository provides a script which lets you define [XDG desktop menu entries](https://portland.freedesktop.org/doc/xdg-desktop-menu.html) in a declarative manner using Nix, per project.
+This repository provides a script which lets you define [XDG desktop menu entries](https://specifications.freedesktop.org/desktop-entry-spec/latest/) in a declarative manner using Nix, per project.
 
 I am a user of [home-manager](https://github.com/nix-community/home-manager). It lets you manage whole programs including executables, configuration files, systemd services, and other files, but its way of configuration is centralized. It (apparently) allows only one configuration per home directory. Sometimes, I wanted something more lightweight.
 
