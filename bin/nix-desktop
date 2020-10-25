@@ -198,7 +198,7 @@ cd "$dir"
 oldRoot=".nix-desktop-link"
 
 if [[ "$cmd" = install ]]; then
-  newRoot="$(nix-build --arg config "import ./desktop.nix" 'main.nix')"
+  newRoot="$(nix-build --arg configFile ./desktop.nix 'main.nix')"
 fi
 
 group "${XDG_DATA_HOME:-$HOME/.local/share}/applications" \
