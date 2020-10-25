@@ -15,6 +15,10 @@ usage() {
   echo "Usage: $(basename $0) [install|uninstall] DIR"
 }
 
+showVersion() {
+  echo "$(basename $0) VERSION"
+}
+
 if [[ $# -eq 0 ]]; then
   usage
   exit 2
@@ -25,6 +29,10 @@ cmd=install
 case "$1" in
   -h|--help)
     usage
+    exit
+    ;;
+  --version)
+    showVersion
     exit
     ;;
   install)
