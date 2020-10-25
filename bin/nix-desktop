@@ -1,0 +1,221 @@
+#!/usr/bin/env bash
+
+set -eou pipefail
+
+err() { echo "$*" >&2; }
+
+onAbort() { err "Aborted."; }
+trap onAbort 1 2 6 15
+
+########################
+# Parsing command line #
+########################
+
+usage() {
+    echo "Usage: $(basename $0) [install|uninstall] DIR"
+}
+
+if [[ $# -eq 0 ]]; then
+    usage
+    exit 2
+fi
+
+cmd=install
+
+case "$1" in
+    -h|--help)
+        usage
+        exit
+        ;;
+    install)
+        cmd=install
+        shift
+        ;;
+    uninstall)
+        cmd=uninstall
+        shift
+        ;;
+esac
+
+if [[ $# -eq 1 ]]; then
+    dir="$1"
+else
+    usage
+    exit 2
+fi
+
+if ! [[ -d "$dir" ]]; then
+    err "$dir is not an existing directory."
+    exit 1
+fi
+
+#############
+# Functions #
+#############
+
+compareAndInstall() {
+
+    local destDir="$1"
+    local relativeDir="$2"
+    local hook="$3"
+
+    local oldDir="$oldRoot/$relativeDir"
+    local newDir="$newRoot/$relativeDir"
+
+    local added=()
+    local changed=()
+    local deleted=()
+    local notChanged=()
+
+    declare -A newFiles
+    declare -A oldFiles
+
+    local updated=1
+
+    for filename in $(ls "$newDir"); do
+        newFiles["$filename"]="$(readlink "$newDir/$filename")"
+    done
+
+    if [[ -d "$oldRoot" ]]; then
+       for filename in $(ls "$oldDir"); do
+           oldFiles["$filename"]="$(readlink "$oldDir/$filename")"
+       done
+    fi
+
+    for newFile in "${!newFiles[@]}"; do
+        if [[ ! -d "$oldDir" ]] \
+               || [[ ${#oldFiles[*]} -eq 0 ]] \
+               || [[ -z ${oldFiles[$newFile]} ]]; then
+            added+=("$newFile")
+        elif [[ ${oldFiles[$newFile]} = ${newFiles[$newFile]} ]]; then
+            notChanged+=("$newFile")
+        else
+            changed+=("$newFile")
+        fi
+    done
+
+    if [[ -v oldFiles ]]; then
+        for oldFile in "${!oldFiles[@]}"; do
+            if [[ -z "${newFiles[$oldFile]}" ]]; then
+                deleted+=("$oldFile")
+            fi
+        done
+    fi
+
+    for filename in ${added[*]}; do
+        echo "Added: $filename"
+    done
+
+    for filename in ${changed[*]}; do
+        echo "Changed: $filename"
+    done
+
+    for filename in ${deleted[*]}; do
+        echo "Deleted: $filename"
+    done
+
+    for filename in ${notChanged[*]}; do
+        echo "Not changed: $filename"
+    done
+
+    # Check conflicts before actual operation
+    for filename in ${added[*]}; do
+        if [[ -e "$destDir/$filename" ]]; then
+            err "$destDir/$filename already exists."
+            return 1
+        fi
+    done
+    for filename in ${changed[*]} ${notChanged[*]}; do
+        if [[ -e "$destDir/$filename" ]]; then
+            if [[ "$(readlink "$destDir/$filename")" != "${oldFiles[$filename]}" ]]; then
+                err "$destDir/$filename does not point to an expected location."
+                return 1
+            fi
+        fi
+    done
+
+    for fileppname in ${added[*]}; do
+        ln -t "$destDir" -f -s "${newFiles[$filename]}"
+        updated=0
+    done
+
+    for filename in ${changed[*]}; do
+        ln -t "$destDir" -fv -s "${newFiles[$filename]}"
+        updated=0
+    done
+
+    for filename in ${deleted[*]}; do
+        unlink -v "$destDir"
+        updated=0
+    done
+
+    if [[ $updated -eq 0 ]]; then
+        if [[ -n "$hook" ]]; then
+            $hook
+        fi
+    fi
+}
+
+uninstall() {
+    local destDir="$1"
+    local relativeDir="$2"
+    local hook="$3"
+
+    local oldDir="$oldRoot/$relativeDir"
+    local dest
+    local origin
+
+    if ! [[ -d "$oldRoot" ]]; then
+        return
+    fi
+
+    for filename in $(ls "$oldDir"); do
+        dest="$(readlink "$oldDir/$filename")"
+        origin="$destDir/$filename"
+        if [[ -L "$origin" ]] && [[ "$dest" = "$(readlink "$origin")" ]]; then
+            echo "Removing $origin"
+            unlink "$origin"
+        fi
+    done
+}
+
+group() {
+    case "$cmd" in
+        install)
+            compareAndInstall "$@"
+            ;;
+        uninstall)
+            uninstall "$@"
+            ;;
+    esac
+}
+
+########
+# Main #
+########
+
+cd "$dir"
+oldRoot=".nix-desktop-link"
+
+if [[ "$cmd" = install ]]; then
+    newRoot="$(nix-build --arg config "import ./desktop.nix" 'main.nix')"
+fi
+
+group "${XDG_DATA_HOME:-$HOME/.local/share}/applications" \
+      "share/applications" \
+      "xdg-desktop-menu forceupdate"
+
+# Update the symlink
+case "$cmd" in
+    install)
+        ln -sTf "$newRoot" "$oldRoot"
+        ;;
+    uninstall)
+        if ! [[ -e "$oldRoot" ]]; then
+            echo "Directory $oldRoot does not exist."
+            echo "Nothing to do."
+        else
+            unlink "$oldRoot"
+        fi
+        ;;
+esac
