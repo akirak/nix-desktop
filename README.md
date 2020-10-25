@@ -4,7 +4,7 @@ This repository provides a script which lets you define [XDG desktop menu entrie
 
 I am a user of [home-manager](https://github.com/nix-community/home-manager). It lets you manage whole programs including executables, configuration files, systemd services, and other files, but its way of configuration is centralized. It (apparently) allows only one configuration per home directory. Sometimes, I wanted something more lightweight.
 
-[Nix Flakes](https://nixos.wiki/wiki/Flakes) lets you define packages and apps within project repositories, which look convenient. However, I did not find a way to integrate such apps with Linux desktop. To start them without opening a terminal, I wanted to install menu entries for those apps, defined within projects. This is an attempt to implement it a consistent way. Note: This does not depend on Nix Flakes.
+[Nix Flakes](https://nixos.wiki/wiki/Flakes) lets you define packages and apps within project repositories, which look convenient. However, I did not find a way to integrate such apps with Linux desktop. To start them without opening a terminal, I wanted to install menu entries for those apps, defined within projects. This is an attempt to implement it in a consistent way. Note: This does not depend on Nix Flakes.
 
 For now, it supports only XDG menu entries for desktop applications, but in the future, it may support systemd unit files in the future, to simplify the configuration of home-manager.
 
