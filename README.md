@@ -26,7 +26,7 @@ let
 in
 {
   name = "my-config";
-  applications.doom-emacs = {
+  xdg.menu.applications.doom-emacs = {
     Name = "Doom Emacs";
     Icon = "emacs";
     TryExec = "${builtins.getEnv "HOME"}/.config/doom-runner/emacs/bin/doom";
@@ -39,7 +39,7 @@ in
 The file defines an attribute set with the following fields:
 
 * `name` is the name of the project. It will become part of the Nix derivation to be built, so it should be file name safe.
-* `applications.*` field(s) define XDG menu entries. Some fields have sensible defaults, but you have to specify `Name`, `Icon`, `Exec`, and `StartupWMClass`.
+* `xdg.menu.applications.*` field(s) define XDG menu entries. Some fields have sensible defaults, but you have to specify `Name`, `Icon`, `Exec`, and `StartupWMClass`.
 
 ## Usage
 
