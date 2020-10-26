@@ -18,5 +18,5 @@ pkgs.symlinkJoin {
           '';
         }
       )
-      config.applications;
+      (((config.xdg or { }).menu or { }).applications or { });
 }
