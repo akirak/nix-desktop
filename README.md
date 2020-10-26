@@ -46,6 +46,12 @@ That is, the file defines an expression which contain `name` field and one or mo
 nix-desktop [install|uninstall] DIR
 ```
 
+or with Nix flakes:
+
+``` shell
+nix run 'github:akirak/nix-desktop' [install|uninstall] DIR
+```
+
 * `DIR` is a directory that contains `desktop.nix`. 
 * With `install`, it installs applications defined in the directory. This mode is the default, so you can omit `install` subcommand and specify the directory as the only argument.
   * If you change the configuration, this command installs new/updated items and uninstalls removed items. It is idempotent.
