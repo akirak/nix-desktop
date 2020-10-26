@@ -18,7 +18,7 @@ nix-env -if .
 
 ## Writing configuration
 
-You can define menu entries by creating a file named `desktop.nix` in a repository and add files to it. The following is an example:
+You can define menu entries by creating a file named `desktop.nix` in a repository. The following is an example:
 
 ``` nix
 let
