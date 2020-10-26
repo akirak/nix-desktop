@@ -36,7 +36,10 @@ in
 }
 ```
 
-That is, the file defines an expression which contain `name` field and one or more `applications.*` fields. The `name` field is a string that can be part of a Nix derivation name. The application entries defines menu entries, whose most fields have sensible defaults. `Name`, `Icon`, `Exec`, and `StartupWMClass` are required and cannot be omitted.
+The file defines an attribute set with the following fields:
+
+* `name` is the name of the project. It will become part of the Nix derivation to be built, so it should be file name safe.
+* `applications.*` field(s) define XDG menu entries. Some fields have sensible defaults, but you have to specify `Name`, `Icon`, `Exec`, and `StartupWMClass`.
 
 ## Usage
 
