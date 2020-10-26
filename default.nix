@@ -9,6 +9,10 @@ in
 pkgs.runCommandNoCC "nix-desktop"
 {
   src = gitignore.gitignoreSource ./.;
+  propagateBuildInputs = [
+    # Needed for xdg-desktop-menu executable
+    pkgs.xdg_utils
+  ];
 } ''
   share=$out/share
   mkdir -p $share
