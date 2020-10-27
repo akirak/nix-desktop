@@ -16,6 +16,12 @@ Install this repository using Nix:
 nix-env -if .
 ```
 
+Alternatively, you can use the program without installing it if you have already enabled Nix flakes:
+
+``` shell
+nix run 'github:akirak/nix-desktop'
+```
+
 ## Writing configuration
 
 You can define menu entries by creating a file named `desktop.nix` in a repository. The following is an example:
