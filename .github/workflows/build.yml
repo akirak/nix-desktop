@@ -1,0 +1,26 @@
+name: 'CI'
+on:
+  pull_request:
+  push:
+    branches:
+    - master
+    paths-ignore:
+    - '**.md'
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: cachix/install-nix-action@v11
+      with:
+        nix_path: nixpkgs=channel:nixos-unstable
+    - name: Install
+      run: nix-env -if .
+    # Test basic command line usage
+    - run: nix-desktop test/xdg-1
+    - name: Verify the result
+      run: 'test -e $HOME/.local/share/applications/true.desktop'
+    - run: nix-desktop uninstall test/xdg-1
+    - name: Verify the result
+      run: '! test -e $HOME/.local/share/applications/true.desktop'
+    - run: nix-desktop install test/xdg-1
