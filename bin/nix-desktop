@@ -142,12 +142,14 @@ compareAndInstall() {
     fi
   done
 
-  for fileppname in ${added[*]}; do
+  for filename in ${added[*]}; do
+    mkdir -p "$destDir"
     ln -t "$destDir" -f -s "${newFiles[$filename]}"
     updated=0
   done
 
   for filename in ${changed[*]}; do
+    mkdir -p "$destDir"
     ln -t "$destDir" -fv -s "${newFiles[$filename]}"
     updated=0
   done
