@@ -3,10 +3,8 @@
 }:
 let
   config = import configFile;
-in
-pkgs.symlinkJoin {
-  name = "${config.name}-desktop-config";
-  paths =
+
+  xdg-desktop-files =
     pkgs.lib.mapAttrsToList
       (
         name: attrs: pkgs.callPackage ./lib/application.nix {
@@ -19,4 +17,22 @@ pkgs.symlinkJoin {
         }
       )
       (((config.xdg or { }).menu or { }).applications or { });
+
+  systemd-unit-files =
+    pkgs.lib.mapAttrsToList
+      (
+        name: attrs: pkgs.callPackage ./lib/systemd-unit.nix {
+          inherit (pkgs) writeTextFile;
+          extension = "service";
+          inherit name attrs;
+        }
+      )
+      ((config.systemd or { }).services or { });
+
+in
+pkgs.symlinkJoin {
+  name = "${config.name}-desktop-config";
+  paths =
+    xdg-desktop-files
+    ++ systemd-unit-files;
 }

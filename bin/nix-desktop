@@ -215,6 +215,10 @@ group "${XDG_DATA_HOME:-$HOME/.local/share}/applications" \
       "share/applications" \
       "xdg-desktop-menu forceupdate"
 
+group "${XDG_DATA_HOME:-$HOME/.local/share}/systemd/user" \
+      "share/systemd/user" \
+      "systemctl --user daemon-reload"
+
 # Update the symlink
 case "$cmd" in
   install)
