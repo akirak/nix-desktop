@@ -80,9 +80,11 @@ compareAndInstall() {
 
   local updated=1
 
-  for filename in $(ls "$newDir"); do
-    newFiles["$filename"]="$(readlink "$newDir/$filename")"
-  done
+  if [[ -d "$newDir" ]]; then
+    for filename in $(ls "$newDir"); do
+      newFiles["$filename"]="$(readlink "$newDir/$filename")"
+    done
+  fi
 
   if [[ -d "$oldRoot" ]]; then
     for filename in $(ls "$oldDir"); do
