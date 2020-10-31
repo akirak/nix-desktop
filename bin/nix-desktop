@@ -65,7 +65,7 @@ compareAndInstall() {
 
   local destDir="$1"
   local relativeDir="$2"
-  local hook="$3"
+  local updateHook="$3"
 
   local oldDir="$oldRoot/$relativeDir"
   local newDir="$newRoot/$relativeDir"
@@ -162,8 +162,8 @@ compareAndInstall() {
   done
 
   if [[ $updated -eq 0 ]]; then
-    if [[ -n "$hook" ]]; then
-      $hook
+    if [[ -n "$updateHook" ]]; then
+      $updateHook
     fi
   fi
 }
