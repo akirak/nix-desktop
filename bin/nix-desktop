@@ -144,6 +144,8 @@ compareAndInstall() {
     fi
   done
 
+  # TODO: Run pre-remove hook
+
   for filename in ${added[*]}; do
     mkdir -p "$destDir"
     ln -t "$destDir" -f -s "${newFiles[$filename]}"
@@ -166,6 +168,8 @@ compareAndInstall() {
       $updateHook
     fi
   fi
+
+  # TODO: Run post-add/change hook
 }
 
 uninstall() {
@@ -213,6 +217,8 @@ if [[ "$cmd" = install ]]; then
   newRoot="$(nix-build --arg configFile ./desktop.nix 'main.nix')"
 fi
 
+# TODO: Add deactivate hook
+
 group "${XDG_DATA_HOME:-$HOME/.local/share}/applications" \
       "share/applications" \
       "xdg-desktop-menu forceupdate"
@@ -235,6 +241,8 @@ case "$cmd" in
     fi
     ;;
 esac
+
+# TODO: Add activate hook
 
 # Local Variables:
 # sh-basic-offset: 2
