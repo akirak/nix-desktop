@@ -86,7 +86,7 @@ compareAndInstall() {
     done
   fi
 
-  if [[ -d "$oldRoot" ]]; then
+  if [[ -d "$oldDir" ]]; then
     for filename in $(ls "$oldDir"); do
       oldFiles["$filename"]="$(readlink "$oldDir/$filename")"
     done
@@ -181,7 +181,7 @@ uninstall() {
   local dest
   local origin
 
-  if ! [[ -d "$oldRoot" ]]; then
+  if ! [[ -d "$oldDir" ]]; then
     return
   fi
 
