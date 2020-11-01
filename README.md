@@ -1,8 +1,8 @@
 # nix-desktop
 
-`nix-desktop` lets you define Linux desktop integration of Nix projects. With this script, you can define [XDG desktop menu entries](https://specifications.freedesktop.org/desktop-entry-spec/latest/) and systemd units in declaratively using Nix and apply it in an idempotent way.
+`nix-desktop` lets you define Linux desktop integration of Nix projects. With this script, you can define [XDG desktop menu entries](https://specifications.freedesktop.org/desktop-entry-spec/latest/) and systemd units declaratively using Nix and apply it in an idempotent way.
 
-I am a user of [home-manager](https://github.com/nix-community/home-manager). It lets you manage whole programs including executables, configuration files, systemd services, and other files, but its way of configuration is centralized. It (apparently) allows only one configuration per home directory. Sometimes, I wanted something slightly decentralized.
+I am a user of [home-manager](https://github.com/nix-community/home-manager). It lets you manage an entire user (home) configuration including program executables, configuration files, systemd services, and other files, but its way of configuration is centralized. It (apparently) allows only one configuration per home directory. Sometimes, I wanted something slightly decentralized. For example, I have some private Git repositories that contain data, and I want to install applications related to the repositories onto machines that are only relevant. I want to hide their existence from the public, and thus they shouldn't be mentioned in my public configuration.
 
 [Nix flakes](https://nixos.wiki/wiki/Flakes) lets you define packages and apps within project repositories, which look convenient. However, I did not find a way to integrate such apps with Linux desktop. To start them without opening a terminal, I wanted to install menu entries for those apps, defined within projects. This is an attempt to implement it in a consistent way. Note: This does not depend on Nix Flakes.
 
