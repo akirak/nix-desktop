@@ -35,6 +35,10 @@ case "$1" in
     showVersion
     exit
     ;;
+  build)
+    cmd=build
+    shift
+    ;;
   install)
     cmd=install
     shift
@@ -240,8 +244,15 @@ group() {
 cd "$dir"
 oldRoot=".nix-desktop-link"
 
-if [[ "$cmd" = install ]]; then
-  newRoot="$(nix-build --arg configFile ./desktop.nix 'main.nix')"
+case "$cmd" in
+  install|build)
+    newRoot="$(nix-build --arg configFile ./desktop.nix 'main.nix')"
+    ;;
+esac
+
+if [[ "$cmd" = build ]]; then
+  echo "$newRoot"
+  exit
 fi
 
 # Run deactivate hooks.

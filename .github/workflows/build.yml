@@ -25,6 +25,8 @@ jobs:
       run: '! test -e $HOME/.local/share/applications/true.desktop'
     - run: nix-desktop install test/xdg-1
 
+    - run: nix-desktop build test/xdg-systemd
+
     # Test systemd services
 
     # TODO: Add tests for systemd integration
