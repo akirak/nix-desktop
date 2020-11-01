@@ -26,6 +26,7 @@ jobs:
     - run: nix-desktop install test/xdg-1
 
     # Test systemd services
+    - run: nix-desktop test/systemd-1
 
     # TODO: Add tests for systemd integration
 
@@ -33,7 +34,6 @@ jobs:
     # systemd. It produces "Failed to connect to bus: No such file or
     # directory" error.
 
-    # - run: nix-desktop test/systemd-1
     # - name: Verify the result
     #   run: |
     #     systemctl --user --no-pager status true-1.service
