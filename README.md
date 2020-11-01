@@ -93,19 +93,23 @@ It also supports the following optional fields:
 `nix-desktop` command has the following synopsis:
 
 ``` shell
-nix-desktop [install|uninstall] DIR
+nix-desktop [install|uninstall|build] DIR
 ```
 
 or with Nix flakes:
 
 ``` shell
-nix run 'github:akirak/nix-desktop' [install|uninstall] DIR
+nix run 'github:akirak/nix-desktop' [install|uninstall|build] DIR
 ```
 
-* `DIR` is a directory that contains `desktop.nix`. 
+`DIR` is a required argument, and it should be set to a directory that contains `desktop.nix`.
+
+The command supports the following modes of operations, which should be denoted by the optional first argument prepended to the directory:
+
 * With `install`, it installs applications defined in the directory. This mode is the default, so you can omit `install` subcommand and specify the directory as the only argument.
   * If you change the configuration, this command installs new/updated items and uninstalls removed items. It is idempotent.
 * With `uninstall`, it uninstall the applications.
+* `build` is like `install`, but it only builds the configuration and neither install configuration files nor update the system.
 
 It creates `.nix-desktop-link` in the same directory as `desktop.nix` to track the installation state. Don't remove this file, and I suggest you add it to `.gitignore` in the repository.
 
