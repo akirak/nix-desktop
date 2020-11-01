@@ -257,12 +257,14 @@ fi
 
 # Run deactivate hooks.
 # This actually calls pre-remove hook on each file.
-if [[ -x "$oldRoot/.pre-remove-hook" ]]; then
-  for dir in "share/systemd/user"; do
-    for file in $(ls "$oldRoot/$dir"); do
-      "$oldRoot/.pre-remove-hook" "$dir" "$file"
+if [[ "$cmd" = uninstall ]]; then
+  if [[ -x "$oldRoot/.pre-remove-hook" ]]; then
+    for dir in "share/systemd/user"; do
+      for file in $(ls "$oldRoot/$dir"); do
+        "$oldRoot/.pre-remove-hook" "$dir" "$file"
+      done
     done
-  done
+  fi
 fi
 
 declare -a activateHooks
