@@ -6,7 +6,7 @@ I am a user of [home-manager](https://github.com/nix-community/home-manager). It
 
 [Nix flakes](https://nixos.wiki/wiki/Flakes) lets you define packages and apps within project repositories, which look convenient. However, I did not find a way to integrate such apps with Linux desktop. To start them without opening a terminal, I wanted to install menu entries for those apps, defined within projects. This is an attempt to implement it in a consistent way. Note: This does not depend on Nix Flakes.
 
-Unlike naive ad-hoc installation of configuration files using `nix-env`, `nix-desktop` updates the system state. It notify updates on desktop menu entries, and reload/enable/(re)start installed systemd units (and stop and disable uninstalled units). This is a convenient and reliable solution for deplying a set of desktop applications and services.
+Unlike naive ad-hoc installation of configuration files using `nix-env`, `nix-desktop` updates the system state. It notifies updates on desktop menu entries and reload/enable/(re)starts installed systemd units (and stops and disables uninstalled units). This is a convenient and reliable solution for deplying a set of desktop applications and services.
 
 ## Installation
 
