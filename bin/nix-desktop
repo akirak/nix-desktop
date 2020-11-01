@@ -65,7 +65,7 @@ compareAndInstall() {
 
   local destDir="$1"
   local relativeDir="$2"
-  local hook="$3"
+  local updateHook="$3"
 
   local oldDir="$oldRoot/$relativeDir"
   local newDir="$newRoot/$relativeDir"
@@ -80,11 +80,13 @@ compareAndInstall() {
 
   local updated=1
 
-  for filename in $(ls "$newDir"); do
-    newFiles["$filename"]="$(readlink "$newDir/$filename")"
-  done
+  if [[ -d "$newDir" ]]; then
+    for filename in $(ls "$newDir"); do
+      newFiles["$filename"]="$(readlink "$newDir/$filename")"
+    done
+  fi
 
-  if [[ -d "$oldRoot" ]]; then
+  if [[ -d "$oldDir" ]]; then
     for filename in $(ls "$oldDir"); do
       oldFiles["$filename"]="$(readlink "$oldDir/$filename")"
     done
@@ -142,28 +144,59 @@ compareAndInstall() {
     fi
   done
 
+  if [[ -x "$oldRoot/.pre-remove-hook" ]]; then
+    for filename in ${deleted[*]}; do
+      "$oldRoot/.pre-remove-hook" "$relativeDir" "$filename"
+    done
+  fi
+
   for filename in ${added[*]}; do
     mkdir -p "$destDir"
     ln -t "$destDir" -f -s "${newFiles[$filename]}"
     updated=0
+    if [[ -x "$newRoot/.activate-on-add-hook" ]]; then
+      activateHooks+=("$newRoot/.activate-on-add-hook $relativeDir $filename")
+    fi
   done
 
   for filename in ${changed[*]}; do
     mkdir -p "$destDir"
     ln -t "$destDir" -fv -s "${newFiles[$filename]}"
     updated=0
+    if [[ -x "$newRoot/.activate-on-change-hook" ]]; then
+      activateHooks+=("$newRoot/.activate-on-change-hook $relativeDir $filename")
+    fi
   done
 
   for filename in ${deleted[*]}; do
-    unlink -v "$destDir"
+    unlink -v "$destDir/$filename"
     updated=0
   done
 
   if [[ $updated -eq 0 ]]; then
-    if [[ -n "$hook" ]]; then
-      $hook
+    if [[ -n "$updateHook" ]]; then
+      $updateHook
     fi
   fi
+
+  # These hooks should be run after updating,
+  # e.g. enable systemd services after reloading unit files
+
+  if [[ -x "$newRoot/.post-add-hook" ]]; then
+    for filename in ${added[*]}; do
+      "$newRoot/.post-add-hook" "$relativeDir" "$filename"
+    done
+  fi
+
+  # If necessary, implement post-change hook.
+  # The implementation should be similar to post-add hook.
+  #
+  # if [[ -x "$oldRoot/.post-change-hook" ]]; then
+  #   for filename in ${added[*]}; do
+  #     "$oldRoot/.post-change-hook" "$relativeDir" "$filename"
+  #   done
+  # fi
+
 }
 
 uninstall() {
@@ -175,7 +208,7 @@ uninstall() {
   local dest
   local origin
 
-  if ! [[ -d "$oldRoot" ]]; then
+  if ! [[ -d "$oldDir" ]]; then
     return
   fi
 
@@ -211,9 +244,25 @@ if [[ "$cmd" = install ]]; then
   newRoot="$(nix-build --arg configFile ./desktop.nix 'main.nix')"
 fi
 
+# Run deactivate hooks.
+# This actually calls pre-remove hook on each file.
+if [[ -x "$oldRoot/.pre-remove-hook" ]]; then
+  for dir in "share/systemd/user"; do
+    for file in $(ls "$oldRoot/$dir"); do
+      "$oldRoot/.pre-remove-hook" "$dir" "$file"
+    done
+  done
+fi
+
+declare -a activateHooks
+
 group "${XDG_DATA_HOME:-$HOME/.local/share}/applications" \
       "share/applications" \
       "xdg-desktop-menu forceupdate"
+
+group "${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user" \
+      "share/systemd/user" \
+      "systemctl --user daemon-reload"
 
 # Update the symlink
 case "$cmd" in
@@ -229,6 +278,25 @@ case "$cmd" in
     fi
     ;;
 esac
+
+# Add activate hook Activation may fail, so it should be run
+# after updating the state, i.e. the symbolic link.
+
+# Some activate hooks may fail, while others may succeed. Thus the
+# process should continue even an error occurs from one of the hook
+# scripts. Use 'set +e' to permit error and use a variable to track
+# the final exit code.
+set +e
+r=0
+# TODO: Run activate hooks concurrently
+if [[ -v activateHooks ]]; then
+  for i in $(seq ${#activateHooks[*]}); do
+    if ! ${activateHooks[$((i - 1))]}; then
+      r=1
+    fi
+  done
+fi
+exit $r
 
 # Local Variables:
 # sh-basic-offset: 2
