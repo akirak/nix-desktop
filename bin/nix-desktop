@@ -144,22 +144,32 @@ compareAndInstall() {
     fi
   done
 
-  # TODO: Run pre-remove hook
+  if [[ -x "$oldRoot/.pre-remove-hook" ]]; then
+    for filename in ${deleted[*]}; do
+      "$oldRoot/.pre-remove-hook" "$relativeDir" "$filename"
+    done
+  fi
 
   for filename in ${added[*]}; do
     mkdir -p "$destDir"
     ln -t "$destDir" -f -s "${newFiles[$filename]}"
     updated=0
+    if [[ -x "$newRoot/.activate-on-add-hook" ]]; then
+      activateHooks+=("$newRoot/.activate-on-add-hook $relativeDir $filename")
+    fi
   done
 
   for filename in ${changed[*]}; do
     mkdir -p "$destDir"
     ln -t "$destDir" -fv -s "${newFiles[$filename]}"
     updated=0
+    if [[ -x "$newRoot/.activate-on-change-hook" ]]; then
+      activateHooks+=("$newRoot/.activate-on-change-hook $relativeDir $filename")
+    fi
   done
 
   for filename in ${deleted[*]}; do
-    unlink -v "$destDir"
+    unlink -v "$destDir/$filename"
     updated=0
   done
 
@@ -169,7 +179,24 @@ compareAndInstall() {
     fi
   fi
 
-  # TODO: Run post-add/change hook
+  # These hooks should be run after updating,
+  # e.g. enable systemd services after reloading unit files
+
+  if [[ -x "$newRoot/.post-add-hook" ]]; then
+    for filename in ${added[*]}; do
+      "$newRoot/.post-add-hook" "$relativeDir" "$filename"
+    done
+  fi
+
+  # If necessary, implement post-change hook.
+  # The implementation should be similar to post-add hook.
+  #
+  # if [[ -x "$oldRoot/.post-change-hook" ]]; then
+  #   for filename in ${added[*]}; do
+  #     "$oldRoot/.post-change-hook" "$relativeDir" "$filename"
+  #   done
+  # fi
+
 }
 
 uninstall() {
@@ -217,7 +244,17 @@ if [[ "$cmd" = install ]]; then
   newRoot="$(nix-build --arg configFile ./desktop.nix 'main.nix')"
 fi
 
-# TODO: Add deactivate hook
+# Run deactivate hooks.
+# This actually calls pre-remove hook on each file.
+if [[ -x "$oldRoot/.pre-remove-hook" ]]; then
+  for dir in "share/systemd/user"; do
+    for file in $(ls "$oldRoot/$dir"); do
+      "$oldRoot/.pre-remove-hook" "$dir" "$file"
+    done
+  done
+fi
+
+declare -a activateHooks
 
 group "${XDG_DATA_HOME:-$HOME/.local/share}/applications" \
       "share/applications" \
@@ -242,7 +279,24 @@ case "$cmd" in
     ;;
 esac
 
-# TODO: Add activate hook
+# Add activate hook Activation may fail, so it should be run
+# after updating the state, i.e. the symbolic link.
+
+# Some activate hooks may fail, while others may succeed. Thus the
+# process should continue even an error occurs from one of the hook
+# scripts. Use 'set +e' to permit error and use a variable to track
+# the final exit code.
+set +e
+r=0
+# TODO: Run activate hooks concurrently
+if [[ -v activateHooks ]]; then
+  for i in $(seq ${#activateHooks[*]}); do
+    if ! ${activateHooks[$((i - 1))]}; then
+      r=1
+    fi
+  done
+fi
+exit $r
 
 # Local Variables:
 # sh-basic-offset: 2
