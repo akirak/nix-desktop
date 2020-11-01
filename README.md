@@ -1,4 +1,4 @@
-# nix-desktop
+# Nix-Desktop: Application + Service Manager for Linux Desktop
 
 `nix-desktop` lets you define Linux desktop integration of Nix projects. With this script, you can define [XDG desktop menu entries](https://specifications.freedesktop.org/desktop-entry-spec/latest/) and systemd units declaratively using Nix and apply it in an idempotent way.
 
