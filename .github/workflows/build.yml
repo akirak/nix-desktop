@@ -26,19 +26,26 @@ jobs:
     - run: nix-desktop install test/xdg-1
 
     # Test systemd services
-    - run: nix-desktop test/systemd-1
-    - name: Verify the result
-      run: |
-        systemctl --user --no-pager status true-1.service
-        systemctl --user --no-pager status echo.service
-        ! systemctl --user is-enabled true-1.service
-        ! systemctl --user is-active true-1.service
-        systemctl --user is-enabled echo.service
-        systemctl --user is-active echo.service
-    - run: nix-desktop uninstall test/systemd-1
-    - name: Verify the result
-      run: |
-        ! systemctl --user is-enabled echo.service
-        ! systemctl --user is-active echo.service
-        ! systemctl --user --no-pager status true-1.service
-        ! systemctl --user --no-pager status echo.service
+
+    # TODO: Add tests for systemd integration
+
+    # The Ubuntu image on GitHub Actions don't seem to support
+    # systemd. It produces "Failed to connect to bus: No such file or
+    # directory" error.
+
+    # - run: nix-desktop test/systemd-1
+    # - name: Verify the result
+    #   run: |
+    #     systemctl --user --no-pager status true-1.service
+    #     systemctl --user --no-pager status echo.service
+    #     ! systemctl --user is-enabled true-1.service
+    #     ! systemctl --user is-active true-1.service
+    #     systemctl --user is-enabled echo.service
+    #     systemctl --user is-active echo.service
+    # - run: nix-desktop uninstall test/systemd-1
+    # - name: Verify the result
+    #   run: |
+    #     ! systemctl --user is-enabled echo.service
+    #     ! systemctl --user is-active echo.service
+    #     ! systemctl --user --no-pager status true-1.service
+    #     ! systemctl --user --no-pager status echo.service
