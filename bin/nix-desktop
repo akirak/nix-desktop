@@ -2,10 +2,36 @@
 
 set -eou pipefail
 
-err() { echo "$*" >&2; }
-
-onAbort() { err "Aborted."; }
+onAbort() { echo "Aborted." >&2; }
 trap onAbort 1 2 6 15
+
+# This path should be replaced using substituteInPlace
+. 'ansi/ansi'
+
+declare -A logLevels=([DEBUG]=0 [INFO]=1 [WARN]=2 [ERROR]=3)
+logLevel=1
+
+declare -A ansi=()
+ansi[ERROR]="--red"
+ansi[WARN]="--yellow"
+ansi[success]="--green"
+ansi[directory]="--bold --magenta"
+
+log() {
+  local priority="$1"
+  shift
+
+  if [[ ${logLevels[$priority]} -lt $logLevel ]]; then
+    return
+  fi
+
+  case $priority in
+    ERROR|WARN)
+      ansi --no-newline ${ansi[$priority]} "$priority: " >&2
+      ;;
+  esac
+  ansi $* >&2
+}
 
 ########################
 # Parsing command line #
@@ -57,7 +83,7 @@ else
 fi
 
 if ! [[ -d "$dir" ]]; then
-  err "$dir is not an existing directory."
+  log ERROR "$dir is not an existing directory."
   exit 1
 fi
 
@@ -83,6 +109,11 @@ compareAndInstall() {
   declare -A oldFiles=()
 
   local updated=1
+
+  # Return early if no file exists at all in the group
+  if [[ ! -d "$newDir" && ! -d "$oldDir" ]]; then
+    return
+  fi
 
   if [[ -d "$newDir" ]]; then
     for filename in $(ls "$newDir"); do
@@ -116,26 +147,30 @@ compareAndInstall() {
     done
   fi
 
+  log INFO ${ansi[directory]} "$destDir"
+
+  log INFO "The following changes will be made:"
+
   for filename in ${added[*]}; do
-    echo "Added: $filename"
+    log INFO "Add: $filename"
   done
 
   for filename in ${changed[*]}; do
-    echo "Changed: $filename"
+    log INFO "Modify: $filename"
   done
 
   for filename in ${deleted[*]}; do
-    echo "Deleted: $filename"
+    log INFO "Delete: $filename"
   done
 
   for filename in ${notChanged[*]}; do
-    echo "Not changed: $filename"
+    log INFO "Not changed: $filename"
   done
 
   # Check conflicts before actual operation
   for filename in ${added[*]}; do
     if [[ -e "$destDir/$filename" ]]; then
-      err "$destDir/$filename already exists."
+      log ERROR "$destDir/$filename already exists."
       return 1
     fi
   done
@@ -143,7 +178,7 @@ compareAndInstall() {
     if [[ -e "$destDir/$filename" ]]; then
       if [[ ! ${oldFiles["$filename"]+_} ]] \
            || [[ "$(readlink "$destDir/$filename")" != ${oldFiles["$filename"]} ]]; then
-        err "$destDir/$filename does not point to an expected location."
+        log ERROR "$destDir/$filename does not point to an expected location."
         return 1
       fi
     fi
@@ -188,9 +223,13 @@ compareAndInstall() {
   unset oldFiles
 
   if [[ $updated -eq 0 ]]; then
+    log INFO ${ansi[success]} "Finished updating."
     if [[ -n "$updateHook" ]]; then
+      log INFO "Running hooks..."
       $updateHook
     fi
+  else
+    log INFO ${ansi[success]} "No change was made."
   fi
 
   # These hooks should be run after updating,
@@ -230,7 +269,7 @@ uninstall() {
     dest="$(readlink "$oldDir/$filename")"
     origin="$destDir/$filename"
     if [[ -L "$origin" ]] && [[ "$dest" = "$(readlink "$origin")" ]]; then
-      echo "Removing $origin"
+      log INFO "Removing $origin"
       unlink "$origin"
     fi
   done
@@ -256,7 +295,7 @@ oldRoot=".nix-desktop-link"
 
 case "$cmd" in
   install|build)
-    newRoot="$(nix-build --arg configFile ./desktop.nix 'main.nix')"
+    newRoot="$(nix-build --quiet --arg configFile ./desktop.nix 'main.nix')"
     ;;
 esac
 
@@ -264,6 +303,15 @@ if [[ "$cmd" = build ]]; then
   echo "$newRoot"
   exit
 fi
+
+case "$cmd" in
+  install)
+    log INFO "Installing..."
+    ;;
+  uninstall)
+    log INFO "Uninstalling..."
+    ;;
+esac
 
 # Run deactivate hooks.
 # This actually calls pre-remove hook on each file.
@@ -294,8 +342,8 @@ case "$cmd" in
     ;;
   uninstall)
     if ! [[ -e "$oldRoot" ]]; then
-      echo "Directory $oldRoot does not exist."
-      echo "Nothing to do."
+      log WARN "Directory $oldRoot does not exist."
+      log INFO "Nothing to do."
     else
       unlink "$oldRoot"
     fi
@@ -312,7 +360,8 @@ esac
 set +e
 r=0
 # TODO: Run activate hooks concurrently
-if [[ -v activateHooks ]]; then
+if [[ -v activateHooks ]] && [[ ${#activateHooks[*]} -gt 0 ]]; then
+  log INFO "Running activation hooks..."
   for i in $(seq ${#activateHooks[*]}); do
     if ! ${activateHooks[$((i - 1))]}; then
       r=1
