@@ -79,8 +79,8 @@ compareAndInstall() {
   local deleted=()
   local notChanged=()
 
-  declare -A newFiles
-  declare -A oldFiles
+  declare -A newFiles=()
+  declare -A oldFiles=()
 
   local updated=1
 
