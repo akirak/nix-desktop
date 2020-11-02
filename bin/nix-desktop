@@ -11,6 +11,12 @@ trap onAbort 1 2 6 15
 declare -A logLevels=([DEBUG]=0 [INFO]=1 [WARN]=2 [ERROR]=3)
 logLevel=1
 
+declare -A ansi=()
+ansi[ERROR]="--red"
+ansi[WARN]="--yellow"
+ansi[success]="--green"
+ansi[directory]="--bold --magenta"
+
 log() {
   local priority="$1"
   shift
@@ -21,10 +27,10 @@ log() {
 
   case $priority in
     ERROR|WARN)
-      # TODO: Apply a different color depending on the priority
-      echo -n "$priority: " >&2
+      ansi --no-newline ${ansi[$priority]} "$priority: " >&2
+      ;;
   esac
-  echo "$*" >&2
+  ansi $* >&2
 }
 
 ########################
@@ -77,7 +83,7 @@ else
 fi
 
 if ! [[ -d "$dir" ]]; then
-  err "$dir is not an existing directory."
+  log ERROR "$dir is not an existing directory."
   exit 1
 fi
 
@@ -141,7 +147,7 @@ compareAndInstall() {
     done
   fi
 
-  log INFO "Directory $destDir"
+  log INFO ${ansi[directory]} "$destDir"
 
   log INFO "The following changes will be made:"
 
@@ -217,13 +223,13 @@ compareAndInstall() {
   unset oldFiles
 
   if [[ $updated -eq 0 ]]; then
-    log INFO "Finished updating."
+    log INFO ${ansi[success]} "Finished updating."
     if [[ -n "$updateHook" ]]; then
       log INFO "Running hooks..."
       $updateHook
     fi
   else
-    log INFO "No change was made."
+    log INFO ${ansi[success]} "No change was made."
   fi
 
   # These hooks should be run after updating,
@@ -298,6 +304,15 @@ if [[ "$cmd" = build ]]; then
   exit
 fi
 
+case "$cmd" in
+  install)
+    log INFO "Installing..."
+    ;;
+  uninstall)
+    log INFO "Uninstalling..."
+    ;;
+esac
+
 # Run deactivate hooks.
 # This actually calls pre-remove hook on each file.
 if [[ "$cmd" = uninstall ]]; then
@@ -345,7 +360,8 @@ esac
 set +e
 r=0
 # TODO: Run activate hooks concurrently
-if [[ -v activateHooks ]]; then
+if [[ -v activateHooks ]] && [[ ${#activateHooks[*]} -gt 0 ]]; then
+  log INFO "Running activation hooks..."
   for i in $(seq ${#activateHooks[*]}); do
     if ! ${activateHooks[$((i - 1))]}; then
       r=1
