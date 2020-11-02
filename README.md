@@ -60,7 +60,6 @@ in
   
       [Service]
       Type=oneshot
-      ExecStartPre=${pkgs.coreutils}/bin/mkdir -p ${thisDir}/repos ${thisDir}/.repos-work
       ExecStart=${pkgs.fuse-overlayfs}/bin/fuse-overlayfs -o lowerdir=${thisDir}/repos-src,upperdir=${thisDir}/repos-overlay,workdir=${thisDir}/.repos-work ${thisDir}/repos
       RemainAfterExit=yes
       ExecStop=${pkgs.fuse}/bin/fusermount -u ${thisDir}/repos
