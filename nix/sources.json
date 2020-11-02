@@ -1,4 +1,16 @@
 {
+    "ansi": {
+        "branch": "master",
+        "description": "ANSI escape codes in pure bash - change text color, position the cursor, much more",
+        "homepage": null,
+        "owner": "fidian",
+        "repo": "ansi",
+        "rev": "225a28e589a93f78820dbf921c8261aeea964676",
+        "sha256": "1pqsjlqwiymjn2ll2wqbj6y48biz47qkbxp9a1wj757q01w64pjm",
+        "type": "tarball",
+        "url": "https://github.com/fidian/ansi/archive/225a28e589a93f78820dbf921c8261aeea964676.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
     "gitignore.nix": {
         "branch": "master",
         "description": "Nix function for filtering local git sources",

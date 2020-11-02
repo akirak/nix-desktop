@@ -5,6 +5,9 @@ set -eou pipefail
 onAbort() { echo "Aborted." >&2; }
 trap onAbort 1 2 6 15
 
+# This path should be replaced using substituteInPlace
+. 'ansi/ansi'
+
 declare -A logLevels=([DEBUG]=0 [INFO]=1 [WARN]=2 [ERROR]=3)
 logLevel=1
 
