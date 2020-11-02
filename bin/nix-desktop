@@ -79,8 +79,8 @@ compareAndInstall() {
   local deleted=()
   local notChanged=()
 
-  declare -A newFiles
-  declare -A oldFiles
+  declare -A newFiles=()
+  declare -A oldFiles=()
 
   local updated=1
 
@@ -99,7 +99,7 @@ compareAndInstall() {
   for newFile in "${!newFiles[@]}"; do
     if [[ ! -d "$oldDir" ]] \
          || [[ ${#oldFiles[*]} -eq 0 ]] \
-         || [[ -z ${oldFiles[$newFile]} ]]; then
+         || [[ ! ${oldFiles["$newFile"]+_} ]]; then
       added+=("$newFile")
     elif [[ ${oldFiles[$newFile]} = ${newFiles[$newFile]} ]]; then
       notChanged+=("$newFile")
@@ -110,7 +110,7 @@ compareAndInstall() {
 
   if [[ -v oldFiles ]]; then
     for oldFile in "${!oldFiles[@]}"; do
-      if [[ -z "${newFiles[$oldFile]}" ]]; then
+      if [[ ! ${newFiles["$oldFile"]+_} ]]; then
         deleted+=("$oldFile")
       fi
     done
@@ -141,7 +141,8 @@ compareAndInstall() {
   done
   for filename in ${changed[*]} ${notChanged[*]}; do
     if [[ -e "$destDir/$filename" ]]; then
-      if [[ "$(readlink "$destDir/$filename")" != "${oldFiles[$filename]}" ]]; then
+      if [[ ! ${oldFiles["$filename"]+_} ]] \
+           || [[ "$(readlink "$destDir/$filename")" != ${oldFiles["$filename"]} ]]; then
         err "$destDir/$filename does not point to an expected location."
         return 1
       fi
@@ -176,6 +177,15 @@ compareAndInstall() {
     unlink -v "$destDir/$filename"
     updated=0
   done
+
+  # It would be better to always clear these non-local variables
+  # declared inside a function.
+  #
+  # I've tried to make this unsetting as early as possible, but some
+  # of the hooks above can fail, which can make the variables left
+  # uncleared.
+  unset newFiles
+  unset oldFiles
 
   if [[ $updated -eq 0 ]]; then
     if [[ -n "$updateHook" ]]; then
