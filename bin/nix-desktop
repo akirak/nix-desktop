@@ -12,7 +12,7 @@ trap onAbort 1 2 6 15
 ########################
 
 usage() {
-  echo "Usage: $(basename $0) [install|uninstall] DIR"
+  echo "Usage: $(basename $0) [install|uninstall|build] DIR"
 }
 
 showVersion() {
