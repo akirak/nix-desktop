@@ -44,7 +44,8 @@ let
               echo "systemd: stopped $file"
             fi
             if systemctl --user --quiet is-enabled "$file"; then
-              systemctl --user --no-pager disable "$file"
+              systemctl --user --no-pager --quiet disable "$file"
+              echo "systemd: disabled $file"
             fi
             ;;
         esac
@@ -67,7 +68,8 @@ let
               if systemctl --user --quiet is-enabled "$file"; then
                 echo "systemd: $file is already enabled"
               else
-                systemctl --user --no-pager enable "$file"
+                systemctl --user --no-pager --quiet enable "$file"
+                echo "systemd: enabled $file"
               fi
             fi
             ;;
