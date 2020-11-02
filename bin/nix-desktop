@@ -177,6 +177,15 @@ compareAndInstall() {
     updated=0
   done
 
+  # It would be better to always clear these non-local variables
+  # declared inside a function.
+  #
+  # I've tried to make this unsetting as early as possible, but some
+  # of the hooks above can fail, which can make the variables left
+  # uncleared.
+  unset newFiles
+  unset oldFiles
+
   if [[ $updated -eq 0 ]]; then
     if [[ -n "$updateHook" ]]; then
       $updateHook
