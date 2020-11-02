@@ -84,6 +84,11 @@ compareAndInstall() {
 
   local updated=1
 
+  # Return early if no file exists at all in the group
+  if [[ ! -d "$newDir" && ! -d "$oldDir" ]]; then
+    return
+  fi
+
   if [[ -d "$newDir" ]]; then
     for filename in $(ls "$newDir"); do
       newFiles["$filename"]="$(readlink "$newDir/$filename")"
@@ -116,16 +121,20 @@ compareAndInstall() {
     done
   fi
 
+  echo "In directory $destDir:"
+
+  echo "The following changes will be made:"
+
   for filename in ${added[*]}; do
-    echo "Added: $filename"
+    echo "Add: $filename"
   done
 
   for filename in ${changed[*]}; do
-    echo "Changed: $filename"
+    echo "Modify: $filename"
   done
 
   for filename in ${deleted[*]}; do
-    echo "Deleted: $filename"
+    echo "Delete: $filename"
   done
 
   for filename in ${notChanged[*]}; do
@@ -188,9 +197,13 @@ compareAndInstall() {
   unset oldFiles
 
   if [[ $updated -eq 0 ]]; then
+    echo "Finished updating."
     if [[ -n "$updateHook" ]]; then
+      echo "Running hooks..."
       $updateHook
     fi
+  else
+    echo "No change was made."
   fi
 
   # These hooks should be run after updating,
