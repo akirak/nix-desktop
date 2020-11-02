@@ -2,10 +2,27 @@
 
 set -eou pipefail
 
-err() { echo "$*" >&2; }
-
-onAbort() { err "Aborted."; }
+onAbort() { echo "Aborted." >&2; }
 trap onAbort 1 2 6 15
+
+declare -A logLevels=([DEBUG]=0 [INFO]=1 [WARN]=2 [ERROR]=3)
+logLevel=1
+
+log() {
+  local priority="$1"
+  shift
+
+  if [[ ${logLevels[$priority]} -lt $logLevel ]]; then
+    return
+  fi
+
+  case $priority in
+    ERROR|WARN)
+      # TODO: Apply a different color depending on the priority
+      echo -n "$priority: " >&2
+  esac
+  echo "$*" >&2
+}
 
 ########################
 # Parsing command line #
@@ -121,30 +138,30 @@ compareAndInstall() {
     done
   fi
 
-  echo "In directory $destDir:"
+  log INFO "Directory $destDir"
 
-  echo "The following changes will be made:"
+  log INFO "The following changes will be made:"
 
   for filename in ${added[*]}; do
-    echo "Add: $filename"
+    log INFO "Add: $filename"
   done
 
   for filename in ${changed[*]}; do
-    echo "Modify: $filename"
+    log INFO "Modify: $filename"
   done
 
   for filename in ${deleted[*]}; do
-    echo "Delete: $filename"
+    log INFO "Delete: $filename"
   done
 
   for filename in ${notChanged[*]}; do
-    echo "Not changed: $filename"
+    log INFO "Not changed: $filename"
   done
 
   # Check conflicts before actual operation
   for filename in ${added[*]}; do
     if [[ -e "$destDir/$filename" ]]; then
-      err "$destDir/$filename already exists."
+      log ERROR "$destDir/$filename already exists."
       return 1
     fi
   done
@@ -152,7 +169,7 @@ compareAndInstall() {
     if [[ -e "$destDir/$filename" ]]; then
       if [[ ! ${oldFiles["$filename"]+_} ]] \
            || [[ "$(readlink "$destDir/$filename")" != ${oldFiles["$filename"]} ]]; then
-        err "$destDir/$filename does not point to an expected location."
+        log ERROR "$destDir/$filename does not point to an expected location."
         return 1
       fi
     fi
@@ -197,13 +214,13 @@ compareAndInstall() {
   unset oldFiles
 
   if [[ $updated -eq 0 ]]; then
-    echo "Finished updating."
+    log INFO "Finished updating."
     if [[ -n "$updateHook" ]]; then
-      echo "Running hooks..."
+      log INFO "Running hooks..."
       $updateHook
     fi
   else
-    echo "No change was made."
+    log INFO "No change was made."
   fi
 
   # These hooks should be run after updating,
@@ -243,7 +260,7 @@ uninstall() {
     dest="$(readlink "$oldDir/$filename")"
     origin="$destDir/$filename"
     if [[ -L "$origin" ]] && [[ "$dest" = "$(readlink "$origin")" ]]; then
-      echo "Removing $origin"
+      log INFO "Removing $origin"
       unlink "$origin"
     fi
   done
@@ -307,8 +324,8 @@ case "$cmd" in
     ;;
   uninstall)
     if ! [[ -e "$oldRoot" ]]; then
-      echo "Directory $oldRoot does not exist."
-      echo "Nothing to do."
+      log WARN "Directory $oldRoot does not exist."
+      log INFO "Nothing to do."
     else
       unlink "$oldRoot"
     fi
