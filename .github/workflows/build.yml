@@ -16,7 +16,14 @@ jobs:
         nix_path: nixpkgs=channel:nixos-unstable
     - name: Install
       run: nix-env -if .
+
     # Test basic command line usage
+
+    # Test in an empty state
+    - run: nix-desktop list
+    - run: nix-desktop update
+
+    # Install and uninstall
     - run: nix-desktop test/xdg-1
     - name: Verify the result
       run: 'test -e $HOME/.local/share/applications/true.desktop'
@@ -26,6 +33,10 @@ jobs:
     - run: nix-desktop install test/xdg-1
 
     - run: nix-desktop build test/xdg-systemd
+
+    # Test against an environment some installations
+    - run: nix-desktop list
+    - run: nix-desktop update
 
     # Test systemd services
 
