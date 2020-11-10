@@ -2,6 +2,16 @@
 
 set -eou pipefail
 
+################################################
+# Variables that can be configured by the user #
+################################################
+
+stateDir="${NIX_DESKTOP_STATE_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/nix-desktop/state}"
+
+###################
+# Basic utilities #
+###################
+
 onAbort() { echo "Aborted." >&2; }
 trap onAbort 1 2 6 15
 
@@ -38,7 +48,14 @@ log() {
 ########################
 
 usage() {
-  echo "Usage: $(basename $0) [install|uninstall|build] DIR"
+  cat <<HELP
+Usage: $(basename $0) [install|uninstall|build] DIR
+
+Usage: $(basename $0) list [--verify]
+
+Usage: $(basename $0) update
+
+HELP
 }
 
 showVersion() {
@@ -73,23 +90,58 @@ case "$1" in
     cmd=uninstall
     shift
     ;;
+  list)
+    cmd=list
+    shift
+    ;;
+  update)
+    cmd=update
+    shift
+    ;;
 esac
 
-if [[ $# -eq 1 ]]; then
-  dir="$1"
-else
-  usage
-  exit 2
-fi
+case "$cmd" in
+  # Commands with one positional argument
+  build|install|uninstall)
+    if [[ $# -eq 1 ]]; then
+      dir="$1"
+    else
+      usage
+      exit 2
+    fi
 
-if ! [[ -d "$dir" ]]; then
-  log ERROR "$dir is not an existing directory."
-  exit 1
-fi
+    if ! [[ -d "$dir" ]]; then
+      log ERROR "$dir is not an existing directory."
+      exit 1
+    fi
+    ;;
+  # Commands with no positional argument
+  *)
+    unset verify
+    for arg; do
+      case "$arg" in
+        --verify)
+          verify=1
+          ;;
+      esac
+    done
+    ;;
+esac
 
 #############
 # Functions #
 #############
+
+# Set `projectMap` variable to an assoc array of projects and source
+# directories.
+setProjectMap() {
+  for name in $(ls "$stateDir"); do
+    if [[ -L "$stateDir/$name/desktop.nix" ]]; then
+      file="$(readlink "$stateDir/$name/desktop.nix")"
+      projectMap+=([$name]="${file%/*}")
+   fi
+  done
+}
 
 compareAndInstall() {
 
@@ -290,8 +342,54 @@ group() {
 # Main #
 ########
 
+# These commands early exit
+case "$cmd" in
+  list)
+    r=0
+    declare -A projectMap
+    setProjectMap
+    for name in ${!projectMap[*]}; do
+      dir="${projectMap[$name]}"
+      if [[ -v verify && ! -e "$dir" ]]; then
+        suffix=" (missing)"
+        r=1
+      else
+        suffix=
+      fi
+      echo $name ${file%/*}$suffix
+    done
+    exit $r
+    ;;
+  update)
+    r=0
+    declare -A projectMap
+    setProjectMap
+    for dir in ${projectMap[*]}; do
+      if ! "$0" "$dir"; then
+        r=1
+      fi
+    done
+    exit $r
+    ;;
+esac
+
 cd "$dir"
-oldRoot=".nix-desktop-link"
+
+# Retrieve name from the expression
+name="$(nix-instantiate --eval -A name --strict desktop.nix | tr -d \")"
+
+oldRoot="$stateDir/$name/result"
+
+# Verify if the desktop.nix point to the same file
+if [[ -L "$stateDir/$name/desktop.nix" ]]; then
+  lastSource="$(readlink "$stateDir/$name/desktop.nix")"
+  if [[ "$lastSource" = "$PWD/desktop.nix" ]]; then
+    log DEBUG Same directory
+  else
+    log ERROR "$name is already installed from a different location: ${lastSource%/*}"
+    exit 1
+  fi
+fi
 
 case "$cmd" in
   install|build)
@@ -306,10 +404,10 @@ fi
 
 case "$cmd" in
   install)
-    log INFO "Installing..."
+    log INFO --blue "Installing $name ($PWD)..."
     ;;
   uninstall)
-    log INFO "Uninstalling..."
+    log INFO --blue "Uninstalling $name ($PWD)..."
     ;;
 esac
 
@@ -338,7 +436,9 @@ group "${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user" \
 # Update the symlink
 case "$cmd" in
   install)
+    mkdir -p "$stateDir/$name"
     ln -sTf "$newRoot" "$oldRoot"
+    ln -sf "$PWD/desktop.nix" "$stateDir/$name/desktop.nix"
     ;;
   uninstall)
     if ! [[ -e "$oldRoot" ]]; then
@@ -346,6 +446,7 @@ case "$cmd" in
       log INFO "Nothing to do."
     else
       unlink "$oldRoot"
+      unlink "$stateDir/$name/desktop.nix"
     fi
     ;;
 esac
