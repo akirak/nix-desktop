@@ -404,10 +404,10 @@ fi
 
 case "$cmd" in
   install)
-    log INFO "Installing..."
+    log INFO --blue "Installing $name ($PWD)..."
     ;;
   uninstall)
-    log INFO "Uninstalling..."
+    log INFO --blue "Uninstalling $name ($PWD)..."
     ;;
 esac
 
