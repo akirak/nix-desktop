@@ -27,11 +27,13 @@ jobs:
 
     # Install and uninstall
     - run: nix-desktop test/xdg-1
-    - name: Verify the result
+    - name: Verify the result for installing test/xdg-1
       run: 'test -e $HOME/.local/share/applications/true.desktop'
+
     - run: nix-desktop uninstall test/xdg-1
-    - name: Verify the result
+    - name: Verify the result for uninstalling test/xdg-1
       run: '! test -e $HOME/.local/share/applications/true.desktop'
+
     - run: nix-desktop install test/xdg-1
 
     - run: nix-desktop build test/xdg-systemd
