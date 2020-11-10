@@ -17,6 +17,8 @@ jobs:
     - name: Install
       run: nix-env -if .
 
+    - run: echo TERM=ansi >> $GITHUB_ENV
+
     # Test basic command line usage
 
     # Test in an empty state
