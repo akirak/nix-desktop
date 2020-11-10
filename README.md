@@ -91,6 +91,8 @@ It also supports the following optional fields:
 
 ## Usage
 
+### Install/uninstall a project
+
 `nix-desktop` command has the following synopsis:
 
 ``` shell
@@ -112,6 +114,24 @@ The command supports the following modes of operations, which should be denoted 
 * With `uninstall`, it uninstall the applications.
 * `build` is like `install`, but it only builds the configuration and neither install configuration files nor update the system.
 
-It creates `.nix-desktop-link` in the same directory as `desktop.nix` to track the installation state. Don't remove this file, and I suggest you add it to `.gitignore` in the repository.
-
 It detects conflicts with applications defined in other projects, so please check error messages.
+
+### List/update the projects in the user's environment
+
+You can browse a list of installed projects:
+
+``` shell
+nix-desktop list
+```
+
+With `--verify` flag, the list command checks if the source directories exist.
+
+``` shell
+nix-desktop list --verify
+```
+
+You can also update all installed projects with a single command:
+
+``` shell
+nix-desktop update
+```
