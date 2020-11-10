@@ -6,7 +6,7 @@ updates:
   schedule:
     interval: daily
     time: '04:40'
-    timezone: Asia/Tokyp
+    timezone: Asia/Tokyo
   open-pull-requests-limit: 10
   commit-message:
       prefix: "chore"
