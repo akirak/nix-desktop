@@ -53,6 +53,8 @@ Usage: $(basename $0) [install|uninstall|build] DIR
 
 Usage: $(basename $0) list [--verify]
 
+Usage: $(basename $0) update
+
 HELP
 }
 
@@ -90,6 +92,10 @@ case "$1" in
     ;;
   list)
     cmd=list
+    shift
+    ;;
+  update)
+    cmd=update
     shift
     ;;
 esac
@@ -351,6 +357,17 @@ case "$cmd" in
         suffix=
       fi
       echo $name ${file%/*}$suffix
+    done
+    exit $r
+    ;;
+  update)
+    r=0
+    declare -A projectMap
+    setProjectMap
+    for dir in ${projectMap[*]}; do
+      if ! "$0" "$dir"; then
+        r=1
+      fi
     done
     exit $r
     ;;
