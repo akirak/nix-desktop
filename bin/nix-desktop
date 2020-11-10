@@ -2,6 +2,16 @@
 
 set -eou pipefail
 
+################################################
+# Variables that can be configured by the user #
+################################################
+
+stateDir="${NIX_DESKTOP_STATE_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/nix-desktop/state}"
+
+###################
+# Basic utilities #
+###################
+
 onAbort() { echo "Aborted." >&2; }
 trap onAbort 1 2 6 15
 
@@ -38,7 +48,12 @@ log() {
 ########################
 
 usage() {
-  echo "Usage: $(basename $0) [install|uninstall|build] DIR"
+  cat <<HELP
+Usage: $(basename $0) [install|uninstall|build] DIR
+
+Usage: $(basename $0) list [--verify]
+
+HELP
 }
 
 showVersion() {
@@ -73,23 +88,54 @@ case "$1" in
     cmd=uninstall
     shift
     ;;
+  list)
+    cmd=list
+    shift
+    ;;
 esac
 
-if [[ $# -eq 1 ]]; then
-  dir="$1"
-else
-  usage
-  exit 2
-fi
+case "$cmd" in
+  # Commands with one positional argument
+  build|install|uninstall)
+    if [[ $# -eq 1 ]]; then
+      dir="$1"
+    else
+      usage
+      exit 2
+    fi
 
-if ! [[ -d "$dir" ]]; then
-  log ERROR "$dir is not an existing directory."
-  exit 1
-fi
+    if ! [[ -d "$dir" ]]; then
+      log ERROR "$dir is not an existing directory."
+      exit 1
+    fi
+    ;;
+  # Commands with no positional argument
+  *)
+    unset verify
+    for arg; do
+      case "$arg" in
+        --verify)
+          verify=1
+          ;;
+      esac
+    done
+    ;;
+esac
 
 #############
 # Functions #
 #############
+
+# Set `projectMap` variable to an assoc array of projects and source
+# directories.
+setProjectMap() {
+  for name in $(ls "$stateDir"); do
+    if [[ -L "$stateDir/$name/desktop.nix" ]]; then
+      file="$(readlink "$stateDir/$name/desktop.nix")"
+      projectMap+=([$name]="${file%/*}")
+   fi
+  done
+}
 
 compareAndInstall() {
 
@@ -290,7 +336,25 @@ group() {
 # Main #
 ########
 
-stateDir="${NIX_DESKTOP_STATE_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/nix-desktop/state}"
+# These commands early exit
+case "$cmd" in
+  list)
+    r=0
+    declare -A projectMap
+    setProjectMap
+    for name in ${!projectMap[*]}; do
+      dir="${projectMap[$name]}"
+      if [[ -v verify && ! -e "$dir" ]]; then
+        suffix=" (missing)"
+        r=1
+      else
+        suffix=
+      fi
+      echo $name ${file%/*}$suffix
+    done
+    exit $r
+    ;;
+esac
 
 cd "$dir"
 
