@@ -290,8 +290,25 @@ group() {
 # Main #
 ########
 
+stateDir="${NIX_DESKTOP_STATE_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/nix-desktop/state}"
+
 cd "$dir"
-oldRoot=".nix-desktop-link"
+
+# Retrieve name from the expression
+name="$(nix-instantiate --eval -A name --strict desktop.nix | tr -d \")"
+
+oldRoot="$stateDir/$name/result"
+
+# Verify if the desktop.nix point to the same file
+if [[ -L "$stateDir/$name/desktop.nix" ]]; then
+  lastSource="$(readlink "$stateDir/$name/desktop.nix")"
+  if [[ "$lastSource" = "$PWD/desktop.nix" ]]; then
+    log DEBUG Same directory
+  else
+    log ERROR "$name is already installed from a different location: ${lastSource%/*}"
+    exit 1
+  fi
+fi
 
 case "$cmd" in
   install|build)
@@ -338,7 +355,9 @@ group "${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user" \
 # Update the symlink
 case "$cmd" in
   install)
+    mkdir -p "$stateDir/$name"
     ln -sTf "$newRoot" "$oldRoot"
+    ln -sf "$PWD/desktop.nix" "$stateDir/$name/desktop.nix"
     ;;
   uninstall)
     if ! [[ -e "$oldRoot" ]]; then
@@ -346,6 +365,7 @@ case "$cmd" in
       log INFO "Nothing to do."
     else
       unlink "$oldRoot"
+      unlink "$stateDir/$name/desktop.nix"
     fi
     ;;
 esac
