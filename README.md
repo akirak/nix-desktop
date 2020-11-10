@@ -71,7 +71,7 @@ in
 }
 ```
 
-The file exports an attribute set, and it must contain a mandatory `name` field. It will become part of the Nix derivation to be built, so it should be file name safe.
+The file exports an attribute set, and it must contain a mandatory `name` field, which is used to uniquely identify projects. It will become part of the Nix derivation to be built, so it should be file name safe.
 
 ### XDG applications
 
