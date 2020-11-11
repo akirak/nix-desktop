@@ -393,7 +393,7 @@ fi
 
 case "$cmd" in
   install|build)
-    newRoot="$(nix-build --quiet --arg configFile ./desktop.nix 'main.nix')"
+    newRoot="$(nix-build --quiet --arg configFile ./desktop.nix --no-out-link 'main.nix')"
     ;;
 esac
 
