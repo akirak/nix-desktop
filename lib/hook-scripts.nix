@@ -21,7 +21,7 @@ let
 
   makeHookScript = name: text: writeTextFile {
     inherit name;
-    text = "#!${stdenv.shell}\n" + text;
+    text = "#!${stdenv.shell}\nset -eou pipefail\n" + text;
     executable = true;
     destination = "/.${name}";
     checkPhase = ''
