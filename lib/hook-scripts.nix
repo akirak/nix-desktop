@@ -64,7 +64,7 @@ let
         ${builtins.concatStringsSep "\n" (builtins.map addSystemdUnitSh systemdEnabledUnits)}
         case "$dir" in
           share/systemd/user)
-            if [[ -n "''${systemdUnits[$file]}" ]]; then
+            if [[ "''${systemdUnits[$file]+_}" ]]; then
               if systemctl --user --quiet is-enabled "$file"; then
                 echo "systemd: $file is already enabled"
               else
@@ -87,7 +87,7 @@ let
         ${builtins.concatStringsSep "\n" (builtins.map addSystemdUnitSh systemdStartedUnits)}
         case "$dir" in
           share/systemd/user)
-            if [[ -n "''${systemdUnits[$file]}" ]]; then
+            if [[ "''${systemdUnits[$file]+_}" ]]; then
               echo -n "systemd: starting $file... "
               if systemctl --user --quiet is-active "$file"; then
                 echo "ignored (already started)"
@@ -112,7 +112,7 @@ let
         echo "$*"
         case "$dir" in
           share/systemd/user)
-            if [[ -n "''${systemdUnits[$file]}" ]]; then
+            if [[ "''${systemdUnits[$file]+_}" ]]; then
               echo -n "systemd: restarting $file... "
               systemctl --user --no-pager restart "$file"
               echo "OK"
