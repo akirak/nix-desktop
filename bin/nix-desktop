@@ -261,7 +261,8 @@ compareAndInstall() {
   done
 
   for filename in ${deleted[*]}; do
-    unlink -v "$destDir/$filename"
+    log INFO "Unlinking $destDir/$filename"
+    unlink "$destDir/$filename"
     updated=0
   done
 
