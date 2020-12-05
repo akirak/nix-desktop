@@ -191,13 +191,11 @@ compareAndInstall() {
     fi
   done
 
-  if [[ -v oldFiles ]]; then
-    for oldFile in "${!oldFiles[@]}"; do
-      if [[ ! ${newFiles["$oldFile"]+_} ]]; then
-        deleted+=("$oldFile")
-      fi
-    done
-  fi
+  for oldFile in "${!oldFiles[@]}"; do
+    if [[ ! ${newFiles["$oldFile"]+_} ]]; then
+      deleted+=("$oldFile")
+    fi
+  done
 
   log INFO ${ansi[directory]} "$destDir"
 
