@@ -36,7 +36,7 @@ let
             extension = pkgs.lib.removeSuffix "s" name;
           }
         )
-        config.systemd);
+        (config.systemd or { }));
 
   hook-scripts =
     pkgs.callPackage ./lib/hook-scripts.nix {
