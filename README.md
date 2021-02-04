@@ -79,7 +79,7 @@ The file exports an attribute set, and it must contain a mandatory `name` field,
 
 ### Systemd units
 
-`systemd.services.*` define user systemd services.
+`systemd.TYPE.*` define user systemd services. `TYPE` can be `services`, `timers`, and other plurals for representing unit types that are supported by systemd.
 
 It must contain `text` field which will become the content of the unit file.
 

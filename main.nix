@@ -18,16 +18,25 @@ let
       )
       (((config.xdg or { }).menu or { }).applications or { });
 
-  systemd-unit-files =
+  collect-systemd-unit-files = { extension, attrs }:
     pkgs.lib.mapAttrsToList
       (
         name: attrs: pkgs.callPackage ./lib/systemd-unit.nix {
-          # inherit (pkgs) writeTextFile;
-          extension = "service";
-          inherit name attrs;
+          inherit name attrs extension;
         }
       )
-      ((config.systemd or { }).services or { });
+      attrs;
+
+  systemd-unit-files =
+    pkgs.lib.flatten
+      (pkgs.lib.mapAttrsToList
+        (name: attrs:
+          collect-systemd-unit-files {
+            inherit attrs;
+            extension = pkgs.lib.removeSuffix "s" name;
+          }
+        )
+        (config.systemd or { }));
 
   hook-scripts =
     pkgs.callPackage ./lib/hook-scripts.nix {
